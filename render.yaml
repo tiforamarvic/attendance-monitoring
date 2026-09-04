@@ -43,3 +43,8 @@ services:
         value: stack
       - key: BCRYPT_ROUNDS
         value: 12
+      # Sets the password for the single admin account, created automatically
+      # on first boot by app:ensure-admin-user-exists. Pick a real password
+      # here rather than leaving it unset.
+      - key: ADMIN_PASSWORD
+        sync: false
