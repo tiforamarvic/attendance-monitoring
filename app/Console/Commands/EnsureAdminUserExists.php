@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
 #[Signature('app:ensure-admin-user-exists')]
-#[Description('Create the single admin user if one does not already exist yet. Safe to run on every boot.')]
+#[Description('Create the single admin user if needed, or sync its password from ADMIN_PASSWORD when set. Safe to run on every boot.')]
 class EnsureAdminUserExists extends Command
 {
     /**
@@ -18,16 +18,23 @@ class EnsureAdminUserExists extends Command
     public function handle(): int
     {
         $email = config('admin.email');
+        $configuredPassword = config('admin.password');
 
-        if (User::where('email', $email)->exists()) {
-            $this->info("Admin user already exists ({$email}); nothing to do.");
+        $admin = User::where('email', $email)->first();
+
+        if ($admin) {
+            if ($configuredPassword !== null) {
+                $admin->update(['password' => bcrypt($configuredPassword)]);
+                $this->info("Admin user already exists ({$email}); password synced from ADMIN_PASSWORD.");
+            } else {
+                $this->info("Admin user already exists ({$email}); ADMIN_PASSWORD not set, leaving password unchanged.");
+            }
 
             return self::SUCCESS;
         }
 
-        $password = config('admin.password');
-        $generated = $password === null;
-        $password ??= Str::random(32);
+        $generated = $configuredPassword === null;
+        $password = $configuredPassword ?? Str::random(32);
 
         User::create([
             'name' => config('admin.name'),
