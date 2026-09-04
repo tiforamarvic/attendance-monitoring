@@ -39,8 +39,11 @@ services:
         value: database
       - key: QUEUE_CONNECTION
         value: database
+      # 'stack' defaults to the 'single' file channel, which writes inside the
+      # container's ephemeral filesystem — invisible in Render's Logs tab and
+      # wiped on every restart. 'stderr' is what Render actually captures.
       - key: LOG_CHANNEL
-        value: stack
+        value: stderr
       - key: BCRYPT_ROUNDS
         value: 12
       # Sets the password for the single admin account, created automatically
