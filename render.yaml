@@ -1,0 +1,47 @@
+databases:
+  - name: attendance-monitoring-db
+    plan: free
+    databaseName: attendance
+    user: attendance
+
+services:
+  - type: web
+    name: attendance-monitoring
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Start on Render's free plan and upgrade later if needed.
+    plan: free
+    healthCheckPath: /login
+    # Runs once per deploy, before traffic is switched to the new instance.
+    preDeployCommand: php artisan migrate --force
+    envVars:
+      - key: APP_NAME
+        value: AttendEase
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      # Generate locally with `php artisan key:generate --show` and paste
+      # the result (including the `base64:` prefix) into the Render dashboard.
+      - key: APP_KEY
+        sync: false
+      # Set this to the exact URL Render assigns the service (or your custom
+      # domain) once you know it, via the Render dashboard.
+      - key: APP_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: attendance-monitoring-db
+          property: connectionString
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: LOG_CHANNEL
+        value: stack
+      - key: BCRYPT_ROUNDS
+        value: 12
