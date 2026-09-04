@@ -41,7 +41,7 @@ class DashboardController extends Controller
                 'class_rooms.id as class_room_id',
                 'class_rooms.name as class_name',
                 'class_rooms.section as class_section',
-                DB::raw("COUNT(attendance_records.id) as total_sessions"),
+                DB::raw('COUNT(attendance_records.id) as total_sessions'),
                 DB::raw("SUM(CASE WHEN attendance_records.status = 'absent' THEN 1 ELSE 0 END) as absent_count"),
                 DB::raw("AVG(CASE
                     WHEN attendance_records.status = 'present'  THEN 100
@@ -52,7 +52,13 @@ class DashboardController extends Controller
                 END) as average_score")
             )
             ->groupBy('students.id', 'students.student_number', 'students.fullname', 'class_rooms.id', 'class_rooms.name', 'class_rooms.section')
-            ->having('average_score', '<', 75)
+            ->havingRaw("AVG(CASE
+                WHEN attendance_records.status = 'present'  THEN 100
+                WHEN attendance_records.status = 'late'     THEN 80
+                WHEN attendance_records.status = 'absent'   THEN 0
+                WHEN attendance_records.status = 'excused'  THEN 100
+                ELSE 0
+            END) < 75")
             ->orderBy('average_score', 'asc')
             ->limit(20)
             ->get();

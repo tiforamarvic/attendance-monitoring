@@ -51,7 +51,12 @@ class ReportsController extends Controller
                 'class_rooms.name',
                 'class_rooms.section'
             )
-            ->having('attendance_rate', '<', $threshold)
+            ->havingRaw('ROUND(AVG(CASE
+                WHEN attendance_records.status = \'present\' THEN 100
+                WHEN attendance_records.status = \'late\'    THEN 80
+                WHEN attendance_records.status = \'absent\'  THEN 0
+                WHEN attendance_records.status = \'excused\' THEN 100
+                ELSE 0 END), 1) < ?', [$threshold])
             ->orderBy('attendance_rate', 'asc')
             ->orderBy('students.fullname', 'asc');
 
@@ -62,9 +67,9 @@ class ReportsController extends Controller
         $failingStudents = $query->get();
 
         $summary = [
-            'total'    => $failingStudents->count(),
+            'total' => $failingStudents->count(),
             'critical' => $failingStudents->where('attendance_rate', '<', 50)->count(),
-            'classes'  => $failingStudents->pluck('class_room_id')->unique()->count(),
+            'classes' => $failingStudents->pluck('class_room_id')->unique()->count(),
         ];
 
         return view('reports.index', compact('classRooms', 'failingStudents', 'summary', 'selectedClassId', 'threshold'));
