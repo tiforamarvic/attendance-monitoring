@@ -12,8 +12,6 @@ services:
     # Start on Render's free plan and upgrade later if needed.
     plan: free
     healthCheckPath: /login
-    # Runs once per deploy, before traffic is switched to the new instance.
-    preDeployCommand: php artisan migrate --force
     envVars:
       - key: APP_NAME
         value: AttendEase
@@ -23,7 +21,7 @@ services:
         value: false
       # Generate locally with `php artisan key:generate --show` and paste
       # the result (including the `base64:` prefix) into the Render dashboard.
-      - key: base64:KbzV9loJBaOz25/4werv+jFHjTnOUdhiq2pBHBDHwHw=
+      - key: APP_KEY
         sync: false
       # Set this to the exact URL Render assigns the service (or your custom
       # domain) once you know it, via the Render dashboard.
