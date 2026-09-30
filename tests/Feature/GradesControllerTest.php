@@ -96,3 +96,20 @@ test('an invalid class_id returns a 404 instead of a server error', function () 
 
     $response->assertNotFound();
 });
+
+test('an array class_id returns a 404 instead of a server error', function () {
+    Term::where('key', 'prelim')->update(['start_date' => '2026-01-01', 'end_date' => '2026-01-31']);
+    Term::where('key', 'midterm')->update(['start_date' => '2026-02-01', 'end_date' => '2026-02-28']);
+    Term::where('key', 'finals')->update(['start_date' => '2026-03-01', 'end_date' => '2026-03-31']);
+
+    // Wraps a real, existing id in an array: findOrFail() with an array whose
+    // ids all resolve does NOT throw ModelNotFoundException — it returns a
+    // Collection instead of a single model, which is what the guard must
+    // reject before that Collection reaches code that expects a ClassRoom.
+    $classRoom = ClassRoom::factory()->create();
+
+    $response = $this->actingAs(User::factory()->create())
+        ->get(route('grades.index', ['class_id' => [$classRoom->id]]));
+
+    $response->assertNotFound();
+});

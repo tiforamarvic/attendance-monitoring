@@ -23,7 +23,7 @@ class GradesController extends Controller
         $terms = Term::whereIn('key', ['prelim', 'midterm', 'finals'])->get();
         $termsConfigured = $terms->every(fn (Term $term) => $term->start_date && $term->end_date);
 
-        $selectedClassId = $request->input('class_id');
+        $selectedClassId = $this->resolveClassId($request);
         $studentGrades = new Collection;
 
         if ($selectedClassId && $termsConfigured) {
@@ -36,7 +36,7 @@ class GradesController extends Controller
 
     public function export(Request $request): RedirectResponse|BinaryFileResponse
     {
-        $classRoom = ClassRoom::findOrFail($request->input('class_id'));
+        $classRoom = ClassRoom::findOrFail($this->resolveClassId($request));
 
         $terms = Term::whereIn('key', ['prelim', 'midterm', 'finals'])->get();
         $termsConfigured = $terms->every(fn (Term $term) => $term->start_date && $term->end_date);
@@ -46,6 +46,28 @@ class GradesController extends Controller
                 ->with('error', 'Configure term dates before exporting.');
         }
 
-        return Excel::download(new ClassGradesExport($classRoom), "{$classRoom->name}-grades.xlsx");
+        $filename = str_replace(['/', '\\'], '-', $classRoom->name);
+
+        return Excel::download(new ClassGradesExport($classRoom), "{$filename}-grades.xlsx");
+    }
+
+    /**
+     * Resolves the class_id query param to an int, or null when absent.
+     * Aborts with a 404 for anything else (arrays, non-numeric strings)
+     * rather than letting it reach Eloquent as a malformed lookup.
+     */
+    private function resolveClassId(Request $request): ?int
+    {
+        $classId = $request->query('class_id');
+
+        if ($classId === null || $classId === '') {
+            return null;
+        }
+
+        if (! is_numeric($classId)) {
+            abort(404);
+        }
+
+        return (int) $classId;
     }
 }
