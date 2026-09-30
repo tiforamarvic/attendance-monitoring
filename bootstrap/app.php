@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Render terminates TLS at its edge and forwards requests over plain
+        // HTTP; without this, Laravel can't tell the original request was
+        // HTTPS and generates insecure (http://) links and redirects.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
