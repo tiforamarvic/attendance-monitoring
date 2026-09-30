@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
         ->except(['edit']);
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('/grades', [GradesController::class, 'index'])->name('grades.index');
+    Route::get('/grades/export', [GradesController::class, 'export'])->name('grades.export');
     Route::get('/terms', [TermController::class, 'edit'])->name('terms.edit');
     Route::put('/terms', [TermController::class, 'update'])->name('terms.update');
 });
