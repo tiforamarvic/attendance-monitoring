@@ -38,9 +38,9 @@ class ReportsController extends Controller
                 DB::raw("SUM(CASE WHEN attendance_records.status = 'excused' THEN 1 ELSE 0 END) as excused_count"),
                 DB::raw("ROUND(AVG(CASE
                     WHEN attendance_records.status = 'present' THEN 100
-                    WHEN attendance_records.status = 'late'    THEN 80
+                    WHEN attendance_records.status = 'excused' THEN 90
+                    WHEN attendance_records.status = 'late'    THEN 85
                     WHEN attendance_records.status = 'absent'  THEN 0
-                    WHEN attendance_records.status = 'excused' THEN 100
                     ELSE 0 END), 1) as attendance_rate")
             )
             ->groupBy(
@@ -53,9 +53,9 @@ class ReportsController extends Controller
             )
             ->havingRaw('ROUND(AVG(CASE
                 WHEN attendance_records.status = \'present\' THEN 100
-                WHEN attendance_records.status = \'late\'    THEN 80
+                WHEN attendance_records.status = \'excused\' THEN 90
+                WHEN attendance_records.status = \'late\'    THEN 85
                 WHEN attendance_records.status = \'absent\'  THEN 0
-                WHEN attendance_records.status = \'excused\' THEN 100
                 ELSE 0 END), 1) < ?', [$threshold])
             ->orderBy('attendance_rate', 'asc')
             ->orderBy('students.fullname', 'asc');

@@ -58,9 +58,9 @@ test('a student with sessions in all three term ranges gets all three scores and
     $row = (new TermGradeCalculator)->forClass($classRoom, configuredTerms())->firstWhere('student_id', $student->id);
 
     expect($row['prelim'])->toBe(100.0);
-    expect($row['midterm'])->toBe(80.0);
+    expect($row['midterm'])->toBe(85.0);
     expect($row['finals'])->toBe(0.0);
-    expect($row['overall'])->toBe(60.0);
+    expect($row['overall'])->toBe(61.7);
 });
 
 test('a session outside all term ranges does not affect any term score or the overall', function () {

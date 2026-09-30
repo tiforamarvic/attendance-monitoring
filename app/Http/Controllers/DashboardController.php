@@ -19,9 +19,9 @@ class DashboardController extends Controller
         $avgAttendance = DB::table('attendance_records')
             ->selectRaw("AVG(CASE
                 WHEN status = 'present'  THEN 100
-                WHEN status = 'late'     THEN 80
+                WHEN status = 'excused'  THEN 90
+                WHEN status = 'late'     THEN 85
                 WHEN status = 'absent'   THEN 0
-                WHEN status = 'excused'  THEN 100
                 ELSE 0
             END) as avg_score")
             ->value('avg_score');
@@ -45,18 +45,18 @@ class DashboardController extends Controller
                 DB::raw("SUM(CASE WHEN attendance_records.status = 'absent' THEN 1 ELSE 0 END) as absent_count"),
                 DB::raw("AVG(CASE
                     WHEN attendance_records.status = 'present'  THEN 100
-                    WHEN attendance_records.status = 'late'     THEN 80
+                    WHEN attendance_records.status = 'excused'  THEN 90
+                    WHEN attendance_records.status = 'late'     THEN 85
                     WHEN attendance_records.status = 'absent'   THEN 0
-                    WHEN attendance_records.status = 'excused'  THEN 100
                     ELSE 0
                 END) as average_score")
             )
             ->groupBy('students.id', 'students.student_number', 'students.fullname', 'class_rooms.id', 'class_rooms.name', 'class_rooms.section')
             ->havingRaw("AVG(CASE
                 WHEN attendance_records.status = 'present'  THEN 100
-                WHEN attendance_records.status = 'late'     THEN 80
+                WHEN attendance_records.status = 'excused'  THEN 90
+                WHEN attendance_records.status = 'late'     THEN 85
                 WHEN attendance_records.status = 'absent'   THEN 0
-                WHEN attendance_records.status = 'excused'  THEN 100
                 ELSE 0
             END) < 75")
             ->orderBy('average_score', 'asc')

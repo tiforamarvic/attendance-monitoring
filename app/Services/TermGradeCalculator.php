@@ -66,9 +66,9 @@ class TermGradeCalculator
             ->groupBy('attendance_records.student_id')
             ->selectRaw("attendance_records.student_id, AVG(CASE
                 WHEN attendance_records.status = 'present'  THEN 100
-                WHEN attendance_records.status = 'late'     THEN 80
+                WHEN attendance_records.status = 'excused'  THEN 90
+                WHEN attendance_records.status = 'late'     THEN 85
                 WHEN attendance_records.status = 'absent'   THEN 0
-                WHEN attendance_records.status = 'excused'  THEN 100
                 ELSE 0
             END) as average_score")
             ->pluck('average_score', 'attendance_records.student_id')
