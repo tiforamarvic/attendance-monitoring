@@ -6,6 +6,7 @@ use App\Http\Controllers\ClassRoomController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\TermController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
@@ -34,4 +35,6 @@ Route::middleware('auth')->group(function () {
         ->parameters(['attendance' => 'attendanceSession'])
         ->except(['edit']);
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('/terms', [TermController::class, 'edit'])->name('terms.edit');
+    Route::put('/terms', [TermController::class, 'update'])->name('terms.update');
 });
