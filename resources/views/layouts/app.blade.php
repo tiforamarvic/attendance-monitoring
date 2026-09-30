@@ -50,6 +50,7 @@
                     ['route' => 'classes.index', 'label' => 'My Classes'],
                     ['route' => 'attendance.index', 'label' => 'Attendance'],
                     ['route' => 'reports.index', 'label' => 'Reports'],
+                    ['route' => 'grades.index', 'label' => 'Grades'],
                 ];
             @endphp
 

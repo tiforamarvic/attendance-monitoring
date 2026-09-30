@@ -4,6 +4,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ClassRoomController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GradesController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TermController;
@@ -35,6 +36,7 @@ Route::middleware('auth')->group(function () {
         ->parameters(['attendance' => 'attendanceSession'])
         ->except(['edit']);
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('/grades', [GradesController::class, 'index'])->name('grades.index');
     Route::get('/terms', [TermController::class, 'edit'])->name('terms.edit');
     Route::put('/terms', [TermController::class, 'update'])->name('terms.update');
 });
