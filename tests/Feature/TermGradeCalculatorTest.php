@@ -129,3 +129,62 @@ test('a class with no enrolled students returns an empty collection without erro
 
     expect($rows)->toHaveCount(0);
 });
+
+test('a session held on the last day of a term counts toward that term', function () {
+    $classRoom = ClassRoom::factory()->create();
+    $student = Student::factory()->create();
+    $classRoom->students()->attach($student->id);
+
+    $session = AttendanceSession::factory()->create(['class_room_id' => $classRoom->id, 'session_date' => '2026-01-31']);
+    AttendanceRecord::factory()->create(['attendance_session_id' => $session->id, 'student_id' => $student->id, 'status' => 'late']);
+
+    $row = (new TermGradeCalculator)->forClass($classRoom, configuredTerms())->firstWhere('student_id', $student->id);
+
+    expect($row['prelim'])->toBe(85.0);
+});
+
+test('daily breakdown lists every session date in the term in order with each student\'s score per date', function () {
+    $classRoom = ClassRoom::factory()->create();
+    $alice = Student::factory()->create(['fullname' => 'Alice']);
+    $bob = Student::factory()->create(['fullname' => 'Bob']);
+    $classRoom->students()->attach([$alice->id, $bob->id]);
+
+    $first = AttendanceSession::factory()->create(['class_room_id' => $classRoom->id, 'session_date' => '2026-01-01']);
+    $second = AttendanceSession::factory()->create(['class_room_id' => $classRoom->id, 'session_date' => '2026-01-31']);
+    $outsideTerm = AttendanceSession::factory()->create(['class_room_id' => $classRoom->id, 'session_date' => '2026-02-01']);
+
+    AttendanceRecord::factory()->create(['attendance_session_id' => $second->id, 'student_id' => $alice->id, 'status' => 'excused']);
+    AttendanceRecord::factory()->create(['attendance_session_id' => $first->id, 'student_id' => $alice->id, 'status' => 'present']);
+    AttendanceRecord::factory()->create(['attendance_session_id' => $first->id, 'student_id' => $bob->id, 'status' => 'absent']);
+    AttendanceRecord::factory()->create(['attendance_session_id' => $outsideTerm->id, 'student_id' => $bob->id, 'status' => 'present']);
+
+    $breakdown = (new TermGradeCalculator)->dailyForTerm($classRoom, configuredTerms()->firstWhere('key', 'prelim'));
+
+    expect($breakdown['dates'])->toBe(['2026-01-01', '2026-01-31']);
+
+    $aliceRow = $breakdown['students']->firstWhere('student_id', $alice->id);
+    expect($aliceRow['scores'])->toBe(['2026-01-01' => 100.0, '2026-01-31' => 90.0]);
+    expect($aliceRow['average'])->toBe(95.0);
+
+    // Bob has no record for Jan 31, so that date is blank and excluded from his average.
+    $bobRow = $breakdown['students']->firstWhere('student_id', $bob->id);
+    expect($bobRow['scores'])->toBe(['2026-01-01' => 0.0, '2026-01-31' => null]);
+    expect($bobRow['average'])->toBe(0.0);
+});
+
+test('daily breakdown average matches the term score on the summary', function () {
+    $classRoom = ClassRoom::factory()->create();
+    $student = Student::factory()->create();
+    $classRoom->students()->attach($student->id);
+
+    foreach (['2026-02-02' => 'present', '2026-02-09' => 'late', '2026-02-16' => 'absent'] as $date => $status) {
+        $session = AttendanceSession::factory()->create(['class_room_id' => $classRoom->id, 'session_date' => $date]);
+        AttendanceRecord::factory()->create(['attendance_session_id' => $session->id, 'student_id' => $student->id, 'status' => $status]);
+    }
+
+    $calculator = new TermGradeCalculator;
+    $summaryRow = $calculator->forClass($classRoom, configuredTerms())->firstWhere('student_id', $student->id);
+    $dailyRow = $calculator->dailyForTerm($classRoom, configuredTerms()->firstWhere('key', 'midterm'))['students']->firstWhere('student_id', $student->id);
+
+    expect($dailyRow['average'])->toBe($summaryRow['midterm']);
+});

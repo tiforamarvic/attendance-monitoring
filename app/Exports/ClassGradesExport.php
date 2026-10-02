@@ -4,42 +4,27 @@ namespace App\Exports;
 
 use App\Models\ClassRoom;
 use App\Models\Term;
-use App\Services\TermGradeCalculator;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class ClassGradesExport implements FromCollection, WithHeadings, WithMapping
+class ClassGradesExport implements WithMultipleSheets
 {
+    private const TERM_KEYS = ['prelim', 'midterm', 'finals'];
+
     public function __construct(private readonly ClassRoom $classRoom) {}
 
-    public function collection(): Collection
+    /** @return array<int, object> */
+    public function sheets(): array
     {
-        $terms = Term::whereIn('key', ['prelim', 'midterm', 'finals'])->get();
+        $terms = Term::whereIn('key', self::TERM_KEYS)->get()
+            ->sortBy(fn (Term $term) => array_search($term->key, self::TERM_KEYS))
+            ->values();
 
-        return (new TermGradeCalculator)->forClass($this->classRoom, $terms);
-    }
+        $sheets = [new ClassGradesSummarySheet($this->classRoom, $terms)];
 
-    /** @return array<int, string> */
-    public function headings(): array
-    {
-        return ['Student No.', 'Full Name', 'Prelim', 'Midterm', 'Finals', 'Overall'];
-    }
+        foreach ($terms as $term) {
+            $sheets[] = new TermDailyGradesSheet($this->classRoom, $term);
+        }
 
-    /**
-     * @param  array{student_number: string, fullname: string, prelim: ?float, midterm: ?float, finals: ?float, overall: ?float}  $row
-     * @return array<int, mixed>
-     */
-    public function map($row): array
-    {
-        return [
-            $row['student_number'],
-            $row['fullname'],
-            $row['prelim'],
-            $row['midterm'],
-            $row['finals'],
-            $row['overall'],
-        ];
+        return $sheets;
     }
 }
